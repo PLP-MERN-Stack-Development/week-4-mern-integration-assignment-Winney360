@@ -54,6 +54,11 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
+// Load models
+require('./models/User'); // Register User model
+require('./models/Post'); // Register Post model
+require('./models/Category');
+
 // API routes
 app.use('/api/posts', postRoutes);
 app.use('/api/categories', categoryRoutes);

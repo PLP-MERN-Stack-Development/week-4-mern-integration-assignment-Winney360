@@ -35,12 +35,13 @@ router.post(
       console.log('User registered:', { _id: user._id, username, email }); // Debug log
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      console.log('Generated registration token:', token); // Debug token
       res.status(201).json({
         token,
         user: { _id: user._id, username: user.username, email: user.email },
       });
     } catch (err) {
-      console.error('Registration error:', err.message); // Debug log
+      console.error('Registration error:', err.message, err.stack); // Full stack trace
       res.status(500).json({ error: 'Server error during registration' });
     }
   }
@@ -75,13 +76,13 @@ router.post(
       }
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      console.log('User logged in:', { _id: user._id, username: user.username, email }); // Debug log
+      console.log('Generated login token:', token); // Debug token
       res.json({
         token,
         user: { _id: user._id, username: user.username, email: user.email },
       });
     } catch (err) {
-      console.error('Login error:', err.message); // Debug log
+      console.error('Login error:', err.message, err.stack); // Full stack trace
       res.status(500).json({ error: 'Server error during login' });
     }
   }
