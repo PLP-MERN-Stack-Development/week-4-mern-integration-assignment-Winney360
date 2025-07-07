@@ -1,5 +1,3 @@
-// api.js - API service for making requests to the backend
-
 import axios from 'axios';
 
 // Create axios instance with base URL
@@ -10,12 +8,15 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor for authentication
+// Add request interceptor for authentication and FormData handling
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data';
     }
     return config;
   },
@@ -58,6 +59,7 @@ export const postService = {
 
   // Create a new post
   createPost: async (postData) => {
+    console.log('Creating post with data:', postData); // Debug log
     const response = await api.post('/posts', postData);
     return response.data;
   },
@@ -133,4 +135,4 @@ export const authService = {
   },
 };
 
-export default api; 
+export default api;
