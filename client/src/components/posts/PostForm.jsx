@@ -5,7 +5,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { postService, categoryService } from '../../services/api';
 import * as Yup from 'yup';
 
-// Validation schema
+// Validation schema (excluding file as it's handled by multer)
 const postSchema = Yup.object().shape({
   title: Yup.string()
     .required('Title is required')
@@ -26,7 +26,7 @@ export default function PostForm() {
     title: '',
     content: '',
     categoryId: '',
-    image: null,
+    featuredImage: null, // Changed from featuredimage to featuredImage
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,6 @@ export default function PostForm() {
         const data = await categoryService.getAllCategories();
         console.log('Categories Response:', data);
         setCategories(data || []);
-        // Set default category if available
         if (data.length > 0 && !id) setFormData((prev) => ({ ...prev, categoryId: data[0]._id }));
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -55,7 +54,7 @@ export default function PostForm() {
             title: data.title,
             content: data.content,
             categoryId: data.category._id,
-            image: null,
+            featuredImage: null, // File input will override this
           });
         } catch (error) {
           toast.error('Failed to load post');
@@ -97,8 +96,8 @@ export default function PostForm() {
       data.append('title', formData.title);
       data.append('content', formData.content);
       data.append('categoryId', formData.categoryId);
-      if (formData.image) {
-        data.append('image', formData.image);
+      if (formData.featuredImage) {
+        data.append('featuredImage', formData.featuredImage); // Changed from image to featuredImage
       }
 
       // Log FormData contents
@@ -106,7 +105,6 @@ export default function PostForm() {
         console.log(`FormData entry: ${key}=${value}`);
       }
 
-      // Optimistic update
       if (!user || !user._id) {
         throw new Error('User not authenticated');
       }
@@ -120,7 +118,9 @@ export default function PostForm() {
         },
         author: { _id: user._id, username: user.username },
         createdAt: new Date().toISOString(),
-        featuredImage: formData.image ? URL.createObjectURL(formData.image) : 'default-post.jpg',
+        featuredImage: formData.featuredImage
+          ? URL.createObjectURL(formData.featuredImage)
+          : 'default-post.jpg',
       };
       setOptimisticPost(tempPost);
       toast.info(id ? 'Updating post...' : 'Creating post...');
@@ -135,7 +135,6 @@ export default function PostForm() {
       }
 
       setOptimisticPost(null);
-      // Trigger posts list refresh
       window.dispatchEvent(new Event('postsUpdated'));
       navigate('/posts');
     } catch (error) {
@@ -168,11 +167,20 @@ export default function PostForm() {
       {optimisticPost && (
         <div className="mb-4 p-4 bg-green-100 rounded-md">
           <p>Optimistic Preview:</p>
-          <p><strong>{optimisticPost.title}</strong></p>
+          <p>
+            <strong>{optimisticPost.title}</strong>
+          </p>
           <p>{optimisticPost.content.substring(0, 100)}...</p>
+          {optimisticPost.featuredImage && (
+            <img
+              src={optimisticPost.featuredImage}
+              alt="Optimistic Preview"
+              className="mt-2 w-32 h-auto"
+            />
+          )}
         </div>
       )}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} encType="multipart/form-data"> {/* Added encType */}
         <div className="mb-4">
           <label htmlFor="title" className="block text-sm font-medium text-gray-700">
             Title
@@ -234,13 +242,13 @@ export default function PostForm() {
           {errors.categoryId && <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>}
         </div>
         <div className="mb-4">
-          <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="featuredImage" className="block text-sm font-medium text-gray-700"> {/* Changed from image */}
             Featured Image
           </label>
           <input
             type="file"
-            name="image"
-            id="image"
+            name="featuredImage" // Changed from image
+            id="featuredImage" // Changed from image
             accept="image/*"
             onChange={handleChange}
             className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
