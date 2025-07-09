@@ -9,17 +9,14 @@ export default function PostList() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [optimisticPosts, setOptimisticPosts] = useState([]);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await postService.getAllPosts(page);
-        console.log('API Response:', data);
-        setPosts(data.posts || []);
-        setTotalPages(data.totalPages || 1);
+        const data = await postService.getAllPosts();
+        console.log('API Response in PostList:', data); // Debug log
+        setPosts(Array.isArray(data) ? data : []); // Handle flat array
         setLoading(false);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -29,13 +26,27 @@ export default function PostList() {
       }
     };
     fetchPosts();
-  }, [page]);
+  }, []);
+
+  // Listen for postsUpdated event to refresh after creation
+  useEffect(() => {
+    const handlePostsUpdated = () => {
+      console.log('Posts updated event received, refetching...'); // Debug log
+      fetchPosts(); // Re-fetch posts on update
+    };
+
+    window.addEventListener('postsUpdated', handlePostsUpdated);
+    return () => window.removeEventListener('postsUpdated', handlePostsUpdated);
+  }, []);
 
   // Listen for optimistic post updates from PostForm
   useEffect(() => {
     const handleOptimisticPost = (event) => {
       const newPost = event.detail;
-      setOptimisticPosts((prev) => [newPost, ...prev]);
+      console.log('Optimistic post received:', newPost); // Debug log
+      setOptimisticPosts((prev) => [newPost, ...prev].filter((post, index, self) =>
+        index === self.findIndex((p) => p._id === post._id)
+      )); // Avoid duplicates
     };
 
     window.addEventListener('optimisticPost', handleOptimisticPost);
@@ -60,6 +71,7 @@ export default function PostList() {
   const allPosts = [...optimisticPosts, ...posts].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
+  console.log('allPosts:', allPosts); // Debug log to check the final array
 
   if (loading) {
     return <div className="text-center mt-8">Loading...</div>;
@@ -79,7 +91,7 @@ export default function PostList() {
                   {post.title}
                 </Link>
               </h3>
-              <p className="text-gray-600 mb-2">{post.excerpt}</p>
+              <p className="text-gray-600 mb-2">{post.excerpt || post.content.substring(0, 100) + '...'}</p>
               <p className="text-sm text-gray-500">
                 By {post.author?.username || 'Unknown'} on{' '}
                 {new Date(post.createdAt).toLocaleDateString()}
@@ -104,25 +116,6 @@ export default function PostList() {
           ))}
         </div>
       )}
-      <div className="mt-6 flex justify-between">
-        <button
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md disabled:bg-gray-400"
-        >
-          Previous
-        </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <button
-          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={page === totalPages}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md disabled:bg-gray-400"
-        >
-          Next
-        </button>
-      </div>
       <div className="mt-4">
         <Link
           to="/create"

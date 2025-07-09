@@ -41,14 +41,12 @@ api.interceptors.response.use(
 
 // Post API services
 export const postService = {
-  // Get all posts with optional pagination and filters
-  getAllPosts: async (page = 1, limit = 10, category = null) => {
-    let url = `/posts?page=${page}&limit=${limit}`;
-    if (category) {
-      url += `&category=${category}`;
-    }
-    const response = await api.get(url);
-    return response.data;
+  // Get all posts (simplified to handle flat array response)
+  getAllPosts: async () => {
+    console.log('Fetching all posts from:', `${api.defaults.baseURL}/posts`); // Debug log
+    const response = await api.get('/posts');
+    console.log('API Response in getAllPosts:', response.data); // Debug log
+    return response.data; // Returns flat array as per Postman response
   },
 
   // Get a single post by ID or slug

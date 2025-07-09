@@ -39,6 +39,8 @@ export default function PostForm() {
         const data = await categoryService.getAllCategories();
         console.log('Categories Response:', data);
         setCategories(data || []);
+        // Set default category if available
+        if (data.length > 0 && !id) setFormData((prev) => ({ ...prev, categoryId: data[0]._id }));
       } catch (error) {
         console.error('Error fetching categories:', error);
         toast.error('Failed to load categories: ' + (error.message || 'Unknown error'));
@@ -133,6 +135,8 @@ export default function PostForm() {
       }
 
       setOptimisticPost(null);
+      // Trigger posts list refresh
+      window.dispatchEvent(new Event('postsUpdated'));
       navigate('/posts');
     } catch (error) {
       setOptimisticPost(null);
